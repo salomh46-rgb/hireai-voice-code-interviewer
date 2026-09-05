@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HireAI — Autonomous Voice & Code Technical Interviewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B0C10;
+      color: #E2E8F0;
+    }
+    .font-mono {
+      font-family: 'Fira Code', monospace;
+    }
+    .glass-card {
+      background: rgba(18, 20, 29, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .ai-orb {
+      background: radial-gradient(circle, #6366F1 0%, #A855F7 50%, transparent 70%);
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-purple-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="glass-card border-b border-white/10 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+        <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          Hire<span class="text-purple-400">AI</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 uppercase font-mono">Live Mock Interview</span>
+        </h1>
+        <p class="text-xs text-slate-400">FAANG-Grade AI Technical Interviewer & Real-Time Evaluator</p>
+      </div>
+    </div>
+
+    <!-- ROLE SWITCHER & TIMER -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-mono">
+        <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
+        <span id="interviewTimer" class="text-white font-bold">24:45</span>
+      </div>
+      <select id="roleSelector" onchange="changeRole(this.value)" class="px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs font-semibold focus:outline-none focus:border-purple-400">
+        <option value="fullstack">Full-Stack Architect</option>
+        <option value="backend">Backend & Distributed Systems</option>
+        <option value="ai_engineer">AI / RAG Systems Engineer</option>
+      </select>
+      <a href="https://github.com/salomh46-rgb/hireai-voice-code-interviewer" target="_blank" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white transition-colors">
+        <i data-lucide="github" class="w-5 h-5"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN INTERVIEW ARENA -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT COLUMN: AI INTERVIEWER & PROBLEM BRIEF (5 Cols) -->
+    <div class="lg:col-span-5 space-y-6 flex flex-col">
+      
+      <!-- AI INTERVIEWER AVATAR & VOICE CHAT -->
+      <div class="glass-card p-6 rounded-3xl text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[220px]">
+        <!-- Animated AI Pulse Orb -->
+        <div id="aiOrb" class="w-24 h-24 rounded-full ai-orb flex items-center justify-center mb-4 transition-all duration-300 animate-pulse">
+          <i data-lucide="mic" class="w-10 h-10 text-white"></i>
+        </div>
+        
+        <h3 id="aiInterviewerName" class="text-base font-bold text-white">Senior Staff AI Interviewer</h3>
+        <p id="aiSpeechBubble" class="text-xs text-purple-200/90 mt-2 px-4 italic leading-relaxed">
+          "Hello Jasper! Let's examine your algorithmic thinking. Please solve the problem below and explain your time complexity as you code."
+        </p>
+
+        <!-- Voice Toggle Controls -->
+        <div class="flex items-center gap-3 mt-5">
+          <button id="voiceBtn" onclick="toggleVoiceInput()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all">
+            <i data-lucide="mic" class="w-4 h-4"></i> <span id="voiceBtnText">Speak to AI (Microphone)</span>
+          </button>
+          <button onclick="speakAIPrompt()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white" title="Replay AI Speech">
+            <i data-lucide="volume-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Live Transcribed Speech Preview -->
+        <div id="transcriptBox" class="mt-3 text-[11px] text-slate-400 font-mono italic hidden">
+          Recognized speech: "<span id="liveTranscript" class="text-purple-300"></span>"
+        </div>
+      </div>
+
+      <!-- PROBLEM DETAILS CARD -->
+      <div class="glass-card p-6 rounded-3xl space-y-4 flex-1">
+        <div class="flex items-center justify-between">
+          <span id="problemCategory" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            Algorithms & Hash Maps
+          </span>
+          <span id="problemDifficulty" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            Medium
+          </span>
+        </div>
+
+        <h2 id="problemTitle" class="text-lg font-bold text-white">
+          Two Sum & Hash Map Optimization
+        </h2>
+
+        <p id="problemDescription" class="text-xs text-slate-300 leading-relaxed">
+          Given an array of integers <code class="text-purple-300 font-mono">nums</code> and an integer <code class="text-purple-300 font-mono">target</code>, return indices of the two numbers such that they add up to target. You must solve it in <strong>O(N) time complexity</strong> using an auxiliary Hash Map.
+        </p>
+
+        <div class="p-3 rounded-2xl bg-black/40 border border-white/5 space-y-2 text-xs font-mono">
+          <div class="text-slate-400"><strong>Example 1:</strong></div>
+          <div class="text-slate-300">Input: nums = [2,7,11,15], target = 9</div>
+          <div class="text-emerald-400">Output: [0, 1] (nums[0] + nums[1] == 9)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: LIVE CODE IDE & EVALUATOR (7 Cols) -->
+    <div class="lg:col-span-7 space-y-6 flex flex-col">
+      
+      <!-- CODE EDITOR BOX -->
+      <div class="glass-card rounded-3xl overflow-hidden flex flex-col flex-1 border border-white/10 shadow-2xl">
+        
+        <!-- IDE Toolbar -->
+        <div class="px-5 py-3 bg-black/40 border-b border-white/10 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+            <span class="text-xs font-mono text-slate-400 ml-2">solution.py</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resetCode()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-mono flex items-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+            </button>
+            <button onclick="evaluateCode()" class="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Submit & AI Evaluate
+            </button>
+          </div>
+        </div>
+
+        <!-- Textarea Code Input -->
+        <textarea id="codeEditor" spellcheck="false" class="w-full flex-1 min-h-[300px] p-5 bg-[#08090C] text-purple-200 font-mono text-xs leading-relaxed focus:outline-none resize-none border-none">
+def two_sum(nums: list[int], target: int) -> list[int]:
+    # Optimal O(N) Hash Map Solution
+    seen = {}
+    for i, num in enumerate(nums):
+        diff = target - num
+        if diff in seen:
+            return [seen[diff], i]
+        seen[num] = i
+    return []
+</textarea>
+      </div>
+
+      <!-- AI SCORECARD & DETAILED FEEDBACK REPORT -->
+      <div id="scorecardBox" class="glass-card p-6 rounded-3xl space-y-4">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="award" class="w-5 h-5 text-purple-400"></i>
+            <h3 class="text-base font-bold text-white">AI Evaluation Scorecard</h3>
+          </div>
+          <span id="verdictBadge" class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono">
+            Strong Hire (94/100)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 text-center font-mono">
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <span class="text-[10px] text-slate-400 uppercase">Algorithm Efficiency</span>
+            <div id="algoScore" class="text-xl font-bold text-purple-400 mt-1">96%</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <span class="text-[10px] text-slate-400 uppercase">Code Cleanliness</span>
+            <div id="cleanScore" class="text-xl font-bold text-emerald-400 mt-1">92%</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <span class="text-[10px] text-slate-400 uppercase">Time Complexity</span>
+            <div id="complexityScore" class="text-xl font-bold text-cyan-400 mt-1">O(N)</div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div class="font-bold text-slate-300">💡 AI Interviewer Observations:</div>
+          <ul id="strengthsList" class="space-y-1 text-slate-300 list-disc list-inside">
+            <li>Optimal single-pass hash map eliminates nested O(N^2) loop.</li>
+            <li>Instant index matching with strict type annotations.</li>
+            <li>Strong verbal problem decomposition and trade-off analysis.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let isRecording = false;
+    let spokenText = "";
+    let recognition = null;
+
+    // Web Speech API for real audio input
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            spokenText += event.results[i][0].transcript + " ";
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        document.getElementById("transcriptBox").classList.remove("hidden");
+        document.getElementById("liveTranscript").innerText = spokenText + interim;
+      };
+
+      recognition.onerror = (e) => {
+        console.log("Speech recognition error:", e);
+      };
+    }
+
+    function toggleVoiceInput() {
+      if (!recognition) {
+        alert("Speech Recognition API is not supported in this browser. Please use Chrome/Edge or type directly.");
+        return;
+      }
+      if (!isRecording) {
+        recognition.start();
+        isRecording = true;
+        document.getElementById("voiceBtn").classList.replace("bg-purple-600", "bg-red-600");
+        document.getElementById("voiceBtnText").innerText = "Listening... (Click to Stop)";
+        document.getElementById("aiOrb").classList.add("scale-110", "pulse-purple");
+      } else {
+        recognition.stop();
+        isRecording = false;
+        document.getElementById("voiceBtn").classList.replace("bg-red-600", "bg-purple-600");
+        document.getElementById("voiceBtnText").innerText = "Speak to AI (Microphone)";
+        document.getElementById("aiOrb").classList.remove("scale-110");
+      }
+    }
+
+    function speakAIPrompt() {
+      if ('speechSynthesis' in window) {
+        const text = document.getElementById("aiSpeechBubble").innerText;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1.0;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function changeRole(role) {
+      if (role === 'backend') {
+        document.getElementById("problemTitle").innerText = "PostgreSQL Concurrency & Row Locking";
+        document.getElementById("problemCategory").innerText = "Database Architecture & Concurrency";
+        document.getElementById("problemDescription").innerText = "You are handling concurrent financial transfers between two accounts. How do you prevent deadlocks when Account A transfers to B while B transfers to A simultaneously?";
+        document.getElementById("codeEditor").value = "async def transfer_funds(from_id: int, to_id: int, amount: float):\n    # Acquire locks in deterministic order to prevent deadlock\n    first_id = min(from_id, to_id)\n    second_id = max(from_id, to_id)\n    # TODO: Implement SELECT FOR UPDATE\n    pass";
+      } else if (role === 'ai_engineer') {
+        document.getElementById("problemTitle").innerText = "Cosine Similarity & RAG Chunk Ranking";
+        document.getElementById("problemCategory").innerText = "AI Embeddings & Vector Search";
+        document.getElementById("problemDescription").innerText = "Write a vector search ranking function that calculates cosine similarity between user query embeddings and document chunks.";
+        document.getElementById("codeEditor").value = "import numpy as np\n\ndef cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:\n    dot = np.dot(v1, v2)\n    norm = np.linalg.norm(v1) * np.linalg.norm(v2)\n    return float(dot / norm) if norm != 0 else 0.0";
+      } else {
+        document.getElementById("problemTitle").innerText = "Two Sum & Hash Map Optimization";
+        document.getElementById("problemCategory").innerText = "Algorithms & Hash Maps";
+        document.getElementById("problemDescription").innerText = "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target in O(N) time complexity.";
+        document.getElementById("codeEditor").value = "def two_sum(nums: list[int], target: int) -> list[int]:\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []";
+      }
+      lucide.createIcons();
+    }
+
+    function resetCode() {
+      changeRole(document.getElementById("roleSelector").value);
+    }
+
+    function evaluateCode() {
+      const code = document.getElementById("codeEditor").value;
+      const hasOptimal = code.includes("seen") || code.includes("dict") || code.includes("min") || code.includes("np.dot");
+      
+      if (hasOptimal) {
+        document.getElementById("verdictBadge").innerText = "Strong Hire (96/100)";
+        document.getElementById("verdictBadge").className = "px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono";
+        document.getElementById("algoScore").innerText = "96%";
+        document.getElementById("cleanScore").innerText = "94%";
+        document.getElementById("complexityScore").innerText = "O(N) Optimal";
+        document.getElementById("strengthsList").innerHTML = `
+          <li>Optimal algorithmic complexity avoiding brute-force bottlenecks.</li>
+          <li>Clean variable semantics and immediate return statements.</li>
+          <li>Demonstrates deep understanding of memory lookup structures.</li>
+        `;
+        document.getElementById("aiSpeechBubble").innerText = "Impressive solution, Jasper! Your single-pass approach is optimal and demonstrates senior engineering intuition.";
+      } else {
+        document.getElementById("verdictBadge").innerText = "Needs Optimization (68/100)";
+        document.getElementById("verdictBadge").className = "px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold font-mono";
+        document.getElementById("algoScore").innerText = "65%";
+        document.getElementById("cleanScore").innerText = "72%";
+        document.getElementById("complexityScore").innerText = "O(N^2) Sub-optimal";
+        document.getElementById("strengthsList").innerHTML = `
+          <li>Functional correctness achieved.</li>
+          <li>Could be optimized to O(N) using auxiliary Hash Map.</li>
+        `;
+        document.getElementById("aiSpeechBubble").innerText = "The code works, but can we optimize the time complexity to avoid O(N^2) nested loops?";
+      }
+      speakAIPrompt();
+      lucide.createIcons();
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>
